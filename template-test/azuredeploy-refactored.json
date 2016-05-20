@@ -14,7 +14,7 @@
       "metadata": {
         "description": "Base URL for the Virtual Network ARM templates"
       },
-      "defaultValue": "https://raw.githubusercontent.com/jamesdawson/arm-templates/master/arm-virtual-network"
+      "defaultValue": "https://github.com/JamesDawson/azure-arm-sandpit/blob/master/template-test"
     }
   },
   "variables": {
@@ -22,7 +22,7 @@
     "storageAccountType": "Standard_LRS",
 
     "templateURLs": {
-      "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet_', parameters('virtualNetworkMode'), '.json')]"
+      "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet_deploy.json')]"
     },
   
     "apiVersion": "2015-06-15"
