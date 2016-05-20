@@ -21,6 +21,9 @@
     "storageAccountName": "[parameters('storageAccountName')]",
     "storageAccountType": "Standard_LRS",
 
+    "virtualNetworkName": "jdNetwork",
+    "nicName": "jdNic",
+
     "templateURLs": {
       "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet-deploy.json')]"
     },
@@ -37,6 +40,9 @@
         "templateLink": {
           "uri": "[variables('templateURLs').vnet]",
           "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "virtualNetworkName": "[variables('virtualNetworkName')]"
         }
       }
     },
