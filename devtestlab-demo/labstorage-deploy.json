@@ -1,0 +1,54 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "labName": {
+            "type": "string"
+        },
+        "artifactsStorageAccountName": {
+            "defaultValue": "artefacts12345",
+            "type": "string"
+        },
+        "storageAccountName": {
+            "defaultValue": "storage12345",
+            "type": "string"
+        }
+    },
+    "variables": {
+        "labName": "[parameters('labName')]",
+        "labId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourcegroups/', resourceGroup().name, '/providers/Microsoft.DevTestLab/labs/', variables('labName'))]",
+
+        "artifactsStorageAccountName": "[parameters('artifactsStorageAccountName')]",
+        "storageAccountName": "[parameters('storageAccountName')]",
+             
+        "apiVersion": "2015-06-15"
+    },
+    "resources": [
+        {
+            "comments": "Storage account used for artefacts storage",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('artifactsStorageAccountName')]",
+            "apiVersion": "[variables('apiVersion')]",
+            "location": "northeurope",
+            "tags": {
+                "hidden-DevTestLabs-LabId": "[variables('labId')]"
+            },
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "comments": "Storage account used for general storage",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "[variables('apiVersion')]",
+            "location": "northeurope",
+            "tags": {
+                "hidden-DevTestLabs-LabId": "[variables('labId')]"
+            },
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        }
+    ]
+}

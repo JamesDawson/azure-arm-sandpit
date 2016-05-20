@@ -1,0 +1,144 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "labName": {
+            "defaultValue": "aqlab-poc",
+            "type": "string"
+        },
+        "vaultsName": {
+            "defaultValue": "aqlab-poc-vaults",
+            "type": "string"
+        },
+        "labSubnetName": {
+            "defaultValue": "aqlab-poc-subnet",
+            "type": "string"
+        },
+        "labSubnetAddressPrefix": {
+            "defaultValue": "172.16.10.0/24",
+            "type": "string"
+        },
+        "artifactsStorageAccountName": {
+            "defaultValue": "artefacts12345",
+            "type": "string"
+        },
+        "storageAccountName": {
+            "defaultValue": "storage12345",
+            "type": "string"
+        },
+        "virtualNetworkTemplateBaseUrl": {
+            "type": "string",
+            "metadata": {
+                "description": "Base URL for the Virtual Network ARM templates"
+            },
+            "defaultValue": "https://raw.githubusercontent.com/jamesdawson/azure-arm-sandpit/master/devtestlab-demo"
+        },
+        "tenantId": {
+            "defaultValue": "d4ca8aa1-c66e-4a06-981f-003e32307bc3",
+            "type": "string"
+        }
+    },
+    "variables": {
+        "tenantId": "[parameters('tenantId')]",
+        "labName": "[parameters('labName')]",
+        "labId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourcegroups/', resourceGroup().name, '/providers/Microsoft.DevTestLab/labs/', variables('labName'))]",
+        
+        "subnetName": "[parameters('labSubnetName')]",
+        "subnetAddressPrefix": "[parameters('labSubnetAddressPrefix')]",
+        
+        "templateURLs": {
+            "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet-deploy.json')]",
+            "storage": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/storage-deploy.json')]"
+        },
+        
+        "apiVersion": "2015-06-15"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "VirtualNetworkImport",
+            "apiVersion": "2016-02-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('templateURLs').vnet]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "labSubnetName": {
+                        "value": "[variables('subnetName')]"
+                    },
+                    "labSubnetAddressPrefix": {
+                        "value": "[variables('subnetAddressPrefix')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "StorageAccountsImport",
+            "apiVersion": "2016-02-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('templateURLs').storage]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "labName": {
+                        "value": "[variables('labName')]"
+                    }
+                }
+            }
+        },
+        
+        {
+            "type": "Microsoft.DevTestLab/labs",
+            "name": "[variables('labName')]",
+            "apiVersion": "2015-05-21-preview",
+            "location": "northeurope",
+            "properties": {
+                "defaultStorageAccount": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                "artifactsStorageAccount": "[resourceId('Microsoft.Storage/storageAccounts', parameters('artifactsStorageAccountName'))]",
+                "vaultName": "[resourceId('Microsoft.KeyVault/vaults', parameters('vaultsName'))]",
+                "labStorageType": "Standard",
+                "createdDate": "2016-05-19T11:45:18.6059807+00:00",
+                "provisioningState": "Succeeded"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments/storageAccountsImport')]",
+                "[resourceId('Microsoft.Resources/deployments/VirtualNetworkImport')]",
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaultsName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[parameters('vaultsName')]",
+            "apiVersion": "[variables('apiVersion')]",
+            "location": "northeurope",
+            "tags": {
+                "hidden-DevTestLabs-LabId": "[variables('labId')]"
+            },
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[variables('tenantId')]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[variables('tenantId')]",
+                        "objectId": "fb72a468-b3b5-4e60-9ca3-5629cfc43a32",
+                        "permissions": {
+                            "secrets": [
+                                "all"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": true
+            },
+            "dependsOn": []
+        }
+    ]
+}

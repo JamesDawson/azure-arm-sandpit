@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "labSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet allocated a lab"
+      }
+    },
+    "labSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Size of the subnet to create for a lab"
+      }
+    }
+  },
+  "variables": {
+    "virtualNetworkName": "coreNetwork",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
+    "addressPrefix": "172.16.0.0/16",
+    
+    "coreServicesSubnetName": "coreServicesSubnet",
+    "coreServicesSubnetPrefix": "172.16.0.0/24",
+    "coreServicesSubnetRef": "[concat(variables('vnetID'),'/subnets/',variables('coreServicesSubnetName'))]",
+    
+    "labSubnetName": "[parameters('labSubnetName')]",
+    "labSubnetPrefix": "[parameters('labSubnetAddressPrefix')]",
+    "labSubnetRef": "[concat(variables('vnetID'),'/subnets/',variables('labSubnetName'))]",
+  
+    "apiVersion": "2015-06-15"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('virtualNetworkName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('coreServicesSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('coreServicesSubnetPrefix')]"
+            }
+          },
+          {
+            "name": "[variables('labSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('labSubnetPrefix')]"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
