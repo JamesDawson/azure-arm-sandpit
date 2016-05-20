@@ -22,8 +22,16 @@
     "storageAccountType": "Standard_LRS",
 
     "virtualNetworkName": "jdNetwork",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
     "nicName": "jdNic",
-
+    
+    "publicIPAddressName": "jdtestPublicIp",
+    "publicIPAddressType": "Dynamic",
+    "dnsLabelPrefix": "jdtest",
+    
+    "subnetName": "jdsubnet",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+    
     "templateURLs": {
       "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet-deploy.json')]"
     },
@@ -42,7 +50,9 @@
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "virtualNetworkName": "[variables('virtualNetworkName')]"
+          "virtualNetworkName": {
+            "value": "[variables('virtualNetworkName')]"
+          }
         }
       }
     },
@@ -54,6 +64,46 @@
       "location": "[resourceGroup().location]",
       "properties": {
         "accountType": "[variables('storageAccountType')]"
+      }
+    },
+
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+        "dnsSettings": {
+          "domainNameLabel": "[variables('dnsLabelPrefix')]"
+        }
+      }
+    },
+    
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('nicName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+        "Microsoft.Resources/deployments/VirtualNetworkImport"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+              },
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ]
       }
     }
   ]
