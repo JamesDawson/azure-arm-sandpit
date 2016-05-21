@@ -19,14 +19,14 @@
             "type": "string"
         },
         "artifactsStorageAccountName": {
-            "defaultValue": "artefacts12345",
+            "defaultValue": "aqlabartefacts",
             "type": "string"
         },
         "storageAccountName": {
-            "defaultValue": "storage12345",
+            "defaultValue": "aqlabstorage01",
             "type": "string"
         },
-        "virtualNetworkTemplateBaseUrl": {
+        "templatesBaseUrl": {
             "type": "string",
             "metadata": {
                 "description": "Base URL for the Virtual Network ARM templates"
@@ -39,16 +39,23 @@
         }
     },
     "variables": {
-        "tenantId": "[parameters('tenantId')]",
         "labName": "[parameters('labName')]",
         "labId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourcegroups/', resourceGroup().name, '/providers/Microsoft.DevTestLab/labs/', variables('labName'))]",
+        
+        "vaultsName": "[parameters('vaultsName')]",
+        "tenantId": "[parameters('tenantId')]",
+        "azureAdObjectId": "fb72a468-b3b5-4e60-9ca3-5629cfc43a32",
         
         "subnetName": "[parameters('labSubnetName')]",
         "subnetAddressPrefix": "[parameters('labSubnetAddressPrefix')]",
         
+        "artifactsStorageAccountName": "[parameters('artifactsStorageAccountName')]",
+        "storageAccountName": "[parameters('storageAccountName')]",
+        
         "templateURLs": {
-            "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet-deploy.json')]",
-            "storage": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/labstorage-deploy.json')]"
+            "vnet": "[concat(parameters('templatesBaseUrl'), '/vnet-deploy.json')]",
+            "defaultStorage": "[concat(parameters('templatesBaseUrl'), '/labstorage-deploy.json')]",
+            "artefactStorage": "[concat(parameters('templatesBaseUrl'), '/artefactstorage-deploy.json')]"
         },
         
         "apiVersion": "2015-06-15"
@@ -76,17 +83,40 @@
         },
         {
             "type": "Microsoft.Resources/deployments",
-            "name": "StorageAccountsImport",
+            "name": "DefaultStorageAccountImport",
             "apiVersion": "2016-02-01",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[variables('templateURLs').storage]",
+                    "uri": "[variables('templateURLs').defaultStorage]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
                     "labName": {
                         "value": "[variables('labName')]"
+                    },
+                    "storageAccountName": {
+                        "value": "[variables('storageAccountName')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "ArtefactStorageAccountImport",
+            "apiVersion": "2016-02-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('templateURLs').artefactStorage]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "labName": {
+                        "value": "[variables('labName')]"
+                    },
+                    "artifactsStorageAccountName": {
+                        "value": "[variables('artifactsStorageAccountName')]"
                     }
                 }
             }
@@ -96,26 +126,25 @@
             "type": "Microsoft.DevTestLab/labs",
             "name": "[variables('labName')]",
             "apiVersion": "2015-05-21-preview",
-            "location": "northeurope",
+            "location": "[resourceGroup().location]",
             "properties": {
-                "defaultStorageAccount": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
-                "artifactsStorageAccount": "[resourceId('Microsoft.Storage/storageAccounts', parameters('artifactsStorageAccountName'))]",
+                "defaultStorageAccount": "[resourceId('Microsoft.Resources/deployments', 'DefaultStorageAccountImport')]",
+                "artifactsStorageAccount": "[resourceId('Microsoft.Resources/deployments', 'ArtefactStorageAccountImport')]",
                 "vaultName": "[resourceId('Microsoft.KeyVault/vaults', parameters('vaultsName'))]",
-                "labStorageType": "Standard",
-                "createdDate": "2016-05-19T11:45:18.6059807+00:00",
-                "provisioningState": "Succeeded"
+                "labStorageType": "Standard"
             },
             "dependsOn": [
-                "Microsoft.Resources/deployments/StorageAccountsImport",
-                "Microsoft.Resources/deployments/VirtualNetworkImport",
-                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaultsName'))]"
+                "[resourceId('Microsoft.Resources/deployments', 'DefaultStorageAccountImport')]",
+                "[resourceId('Microsoft.Resources/deployments', 'ArtefactStorageAccountImport')]",
+                "[resourceId('Microsoft.Resources/deployments', 'VirtualNetworkImport')]",
+                "[resourceId('Microsoft.KeyVault/vaults', variables('vaultsName'))]"
             ]
         },
         {
             "type": "Microsoft.KeyVault/vaults",
-            "name": "[parameters('vaultsName')]",
-            "apiVersion": "[variables('apiVersion')]",
-            "location": "northeurope",
+            "name": "[variables('vaultsName')]",
+            "apiVersion": "2015-06-01",
+            "location": "[resourceGroup().location]",
             "tags": {
                 "hidden-DevTestLabs-LabId": "[variables('labId')]"
             },
@@ -128,7 +157,7 @@
                 "accessPolicies": [
                     {
                         "tenantId": "[variables('tenantId')]",
-                        "objectId": "fb72a468-b3b5-4e60-9ca3-5629cfc43a32",
+                        "objectId": "[variables('azureAdObjectId')]",
                         "permissions": {
                             "secrets": [
                                 "all"
@@ -137,8 +166,7 @@
                     }
                 ],
                 "enabledForDeployment": true
-            },
-            "dependsOn": []
+            }
         }
     ]
 }

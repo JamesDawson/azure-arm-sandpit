@@ -5,7 +5,7 @@
         "labName": {
             "type": "string"
         },
-        "storageAccountName": {
+        "artifactsStorageAccountName": {
             "type": "string"
         }
     },
@@ -13,15 +13,15 @@
         "labName": "[parameters('labName')]",
         "labId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourcegroups/', resourceGroup().name, '/providers/Microsoft.DevTestLab/labs/', variables('labName'))]",
 
-        "storageAccountName": "[parameters('storageAccountName')]",
+        "artifactsStorageAccountName": "[parameters('artifactsStorageAccountName')]",
              
         "apiVersion": "2015-06-15"
     },
     "resources": [
         {
-            "comments": "Storage account used for general storage",
+            "comments": "Storage account used for artefacts storage",
             "type": "Microsoft.Storage/storageAccounts",
-            "name": "[variables('storageAccountName')]",
+            "name": "[variables('artifactsStorageAccountName')]",
             "apiVersion": "[variables('apiVersion')]",
             "location": "northeurope",
             "tags": {
