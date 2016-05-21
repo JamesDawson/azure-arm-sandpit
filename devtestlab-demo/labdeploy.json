@@ -48,7 +48,7 @@
         
         "templateURLs": {
             "vnet": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/vnet-deploy.json')]",
-            "storage": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/storage-deploy.json')]"
+            "storage": "[concat(parameters('virtualNetworkTemplateBaseUrl'), '/labstorage-deploy.json')]"
         },
         
         "apiVersion": "2015-06-15"
@@ -106,8 +106,8 @@
                 "provisioningState": "Succeeded"
             },
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments/storageAccountsImport')]",
-                "[resourceId('Microsoft.Resources/deployments/VirtualNetworkImport')]",
+                "Microsoft.Resources/deployments/StorageAccountsImport",
+                "Microsoft.Resources/deployments/VirtualNetworkImport",
                 "[resourceId('Microsoft.KeyVault/vaults', parameters('vaultsName'))]"
             ]
         },
