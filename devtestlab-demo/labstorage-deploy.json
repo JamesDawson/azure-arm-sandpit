@@ -6,11 +6,11 @@
             "type": "string"
         },
         "artifactsStorageAccountName": {
-            "defaultValue": "artefacts12345",
+            "defaultValue": "aqlabartefacts",
             "type": "string"
         },
         "storageAccountName": {
-            "defaultValue": "storage12345",
+            "defaultValue": "aqlabstorage01",
             "type": "string"
         }
     },
